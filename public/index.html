@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script
+      src="https://code.jquery.com/jquery-3.6.0.min.js"
+      integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+      crossorigin="anonymous"
+    ></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="css/toDo.css" />
+    <title>To Do App</title>
+  </head>
+  <body>
+    <div class="wrapper">
+      <h1>To Do App</h1>
+      <label>
+        Task:
+        <input type="text" data-role="task" />
+      </label>
+      <button data-role="addBtn">Add</button>
+      <div class="to-do-list">
+        <ol data-role="list"></ol>
+      </div>
+    </div>
+  </body>
+  <script>
+    $(function () {
+      const socket = io.connect(":4000");
+
+      $("[data-role=addBtn]").click(() => {
+        let message = $("[data-role=task]").val();
+        socket.emit("add task", message);
+        $.post("/toDo", { task: message }, (task) => {
+          getOneTask(task._id);
+        });
+      });
+
+      socket.on("show task", (task) => {
+        let oneTask = $("<li>").text(task);
+        let deleteBtn = $("<button>")
+          .text("Delete")
+          .attr("data-role", "deleteBtn");
+        $("[data-role=list]").append($(oneTask), $(deleteBtn));
+        $("[data-role=task]").val("");
+      });
+
+      function getOneTask(taskId) {
+        $.get("/toDo/" + taskId, (task) => {
+          $("[data-role=deleteBtn]").click(function () {
+            fetch("/toDo/" + taskId, { method: "DELETE" })
+              .then((task) => console.log(task))
+              .catch((err) => console.log(err));
+            $(this).siblings()[0].remove();
+            $(this).remove();
+          });
+        });
+      }
+    });
+  </script>
+</html>
